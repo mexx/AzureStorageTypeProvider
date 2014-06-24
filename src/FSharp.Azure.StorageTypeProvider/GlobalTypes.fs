@@ -38,3 +38,8 @@ type LightweightTableEntity
     member x.RowKey with get () = rkey
     member x.Timestamp with get () = timestamp
     member x.Values with get () = values
+
+/// The type of enumeration to return from folder child list operations.
+type BlobFolderSearch =
+| TopLevel
+| Recursive

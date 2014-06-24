@@ -48,6 +48,17 @@ let getBlobStorageAccountManifest connection =
 
 let awaitUnit = Async.AwaitIAsyncResult >> Async.Ignore
 
+let getChildBlobs (connectionDetails, folderSearch) =
+    let connection, container, folderPath = connectionDetails
+    let containerRef = (getBlobClient connection).GetContainerReference(container)
+    let useFlatBlobListing = if folderSearch = TopLevel then true else false
+    seq { yield! containerRef.ListBlobs(prefix = folderPath, useFlatBlobListing = useFlatBlobListing) }
+    |> Seq.choose (fun b -> 
+           match b with
+           | :? CloudBlockBlob as b -> Some b
+           | _ -> None)
+    |> Seq.map(fun i -> connection, container, i.Name)
+
 let downloadFolder (connectionDetails, path) =
     let downloadFile(connectionDetails, destination) =
         let blobRef = getBlobRef (connectionDetails)

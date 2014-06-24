@@ -4,7 +4,6 @@ open FSharp.Azure.StorageTypeProvider.Blob.BlobRepository
 open Microsoft.WindowsAzure.Storage
 open Microsoft.WindowsAzure.Storage.Blob
 open ProviderImplementation.ProvidedTypes
-
 open System
 open System.IO
 open System.Xml.Linq
@@ -12,18 +11,19 @@ open System.Xml.Linq
 /// Represents a file in blob storage.
 type BlobFile internal (connectionDetails) = 
     let blobRef = getBlobRef (connectionDetails)
+    
     let blobProperties = lazy
-                            blobRef.FetchAttributes()
-                            blobRef.Properties
+                               blobRef.FetchAttributes()
+                               blobRef.Properties
     
     /// Generates a full-access shared-access signature for the supplied duration.
     member x.GenerateSharedAccessSignature(duration) = 
         let expiry = Nullable(DateTimeOffset.UtcNow.Add(duration))
         let policy = 
             SharedAccessBlobPolicy
-                (SharedAccessExpiryTime = expiry,
-                 Permissions = (SharedAccessBlobPermissions.Read ||| SharedAccessBlobPermissions.Write |||
-                                SharedAccessBlobPermissions.Delete ||| SharedAccessBlobPermissions.List))
+                (SharedAccessExpiryTime = expiry,                  
+                 Permissions = (SharedAccessBlobPermissions.Read ||| SharedAccessBlobPermissions.Write ||| SharedAccessBlobPermissions.Delete 
+                                ||| SharedAccessBlobPermissions.List))
         let sas = blobRef.GetSharedAccessSignature policy
         Uri(sprintf "%s%s" (blobRef.Uri.ToString()) sas)
     
@@ -38,19 +38,19 @@ type BlobFile internal (connectionDetails) =
     
     /// Opens this file as a text stream for reading.
     member x.OpenStreamAsText() = new StreamReader(x.OpenStream())
-
+    
     /// Reads this file as a string.
     member x.ReadAsString() = blobRef.DownloadText()
     
     /// Reads this file as a string asynchronously.
     member x.ReadAsStringAsync() = Async.AwaitTask(blobRef.DownloadTextAsync())
-
+    
     /// Gets the blob size in bytes.
     member x.Size with get () = blobProperties.Value.Length
-
+    
     /// Gets the name of the blob
     member x.Name with get () = blobRef.Name
-    
+
 /// Represents an XML file stored in blob storage.
 type XmlFile internal (connectionDetails) = 
     inherit BlobFile(connectionDetails)
@@ -65,11 +65,16 @@ type XmlFile internal (connectionDetails) =
 
 /// Represents a pseudo-folder in blob storage.
 type BlobFolder internal (connectionDetails) = 
+    
     /// Downloads the entire folder contents to the local file system asynchronously.
     member x.Download(path) = downloadFolder (connectionDetails, path)
+    
+    /// Gets child blobs in this folder.
+    member x.GetChildren(folderSearch) = getChildBlobs (connectionDetails, folderSearch) |> Seq.map (fun blobConnection -> BlobFile(blobConnection))
 
 /// Represents a container in blob storage.
-type BlobContainer internal (connectionString, container) =  
+type BlobContainer internal (connectionString, container) = 
+    
     /// Downloads the entire container contents to the local file system asynchronously.
     member x.Download(path) = 
         let connectionDetails = connectionString, container, String.Empty
