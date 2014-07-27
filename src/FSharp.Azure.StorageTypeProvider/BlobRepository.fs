@@ -1,6 +1,7 @@
 ﻿///Contains reusable helper functions for accessing blobs
 module internal FSharp.Azure.StorageTypeProvider.Blob.BlobRepository
 
+open FSharp.Azure.StorageTypeProvider.Blob
 open Microsoft.WindowsAzure.Storage
 open Microsoft.WindowsAzure.Storage.Blob
 open System
@@ -51,8 +52,8 @@ let awaitUnit = Async.AwaitIAsyncResult >> Async.Ignore
 let getChildBlobs (connectionDetails, folderSearch) =
     let connection, container, folderPath = connectionDetails
     let containerRef = (getBlobClient connection).GetContainerReference(container)
-    let useFlatBlobListing = if folderSearch = TopLevel then true else false
-    seq { yield! containerRef.ListBlobs(prefix = folderPath, useFlatBlobListing = useFlatBlobListing) }
+    let useFlatBlobListing = if folderSearch = BlobFolderSearch.TopLevel then true else false
+    containerRef.ListBlobs(prefix = folderPath, useFlatBlobListing = useFlatBlobListing)
     |> Seq.choose (fun b -> 
            match b with
            | :? CloudBlockBlob as b -> Some b

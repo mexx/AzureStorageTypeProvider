@@ -39,6 +39,7 @@ type LightweightTableEntity
     member x.Timestamp with get () = timestamp
     member x.Values with get () = values
 
+namespace FSharp.Azure.StorageTypeProvider.Blob
 /// The type of enumeration to return from folder child list operations.
 type BlobFolderSearch =
 | TopLevel
